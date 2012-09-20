@@ -206,7 +206,7 @@ inline Tcl_Obj* MakeBaseSWObj(const SWDict &d) {
 class SWList;
 class SWDict;
 
-inline Obj* MakeBaseSWObj() {
+inline PyObject* MakeBaseSWObj() {
     // create empty object. Easy in Tcl - Python? Refcounting?
     return Py_None;
 }
@@ -214,6 +214,11 @@ inline Obj* MakeBaseSWObj() {
 inline PyObject* MakeBaseSWObj(int i) {
     // create integer object
     return PyLong_FromLong(i);
+}
+
+inline PyObject* MakeBaseSWObj(long l) {
+    // create integer object
+    return PyLong_FromLong(l);
 }
  
 inline PyObject* MakeBaseSWObj(double d) {
