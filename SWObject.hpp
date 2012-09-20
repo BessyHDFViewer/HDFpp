@@ -39,6 +39,11 @@ inline Tcl_Obj* MakeBaseSWObj(int i) {
     // create integer object
     return Tcl_NewIntObj(i);
 }
+
+inline Tcl_Obj* MakeBaseSWObj(long i) {
+    // create integer object
+    return Tcl_NewLongObj(i);
+}
  
 inline Tcl_Obj* MakeBaseSWObj(double d) {
     // create double object.

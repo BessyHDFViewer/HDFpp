@@ -1,6 +1,6 @@
 .SUFFIXES: .o .cpp .c
 
-CFLAGS:=-DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -fopenmp -DHAVE_64BIT -march=core2 $(CFLAGS) -I ~/bin/include/
+CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -fopenmp -DHAVE_64BIT -march=core2 $(CFLAGS) -I ~/bin/include/
 
 LDFLAGS=-L ~/bin/lib64/ -lmfhdf -ldf -lz -ljpeg
 
