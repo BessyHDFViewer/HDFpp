@@ -82,7 +82,7 @@ public:
 	SWObject& operator = (const SWObject& obj) {
 		if (ptr) Tcl_DecrRefCount(ptr);
 		ptr = obj.ptr;
-		Tcl_IncrRefCount(ptr);
+		if (ptr) Tcl_IncrRefCount(ptr);
 		return *this;
 	}
 
@@ -258,7 +258,7 @@ public:
 	SWObject& operator = (const SWObject& obj) {
 		if (ptr) Py_DECREF(ptr);
 		ptr = obj.ptr;
-		Py_INCREF(ptr);
+		if (ptr) Py_INCREF(ptr);
 		return *this;
 	}
 

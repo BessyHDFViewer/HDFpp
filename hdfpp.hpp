@@ -22,10 +22,9 @@ public:
     size_t get_num_datasets() {
         return ndatasets;
     }
-    std::vector<double> readdata(size_t index);
-    SWObject readattrs(size_t index);
+	std::string getname(size_t index);
+    SWList readdata(size_t index);
+    SWDict readattrs(size_t index);
+	SWObject dump();
 };
-
-// test construction of nested dictionary
-SWObject makedict();
 

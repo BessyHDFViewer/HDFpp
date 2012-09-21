@@ -23,7 +23,25 @@ void HDFpp::close() {
     SDend(hdf_id);
 }
 
-std::vector<double> HDFpp::readdata(size_t index) { 
+string HDFpp::getname(size_t index) {
+	if (index>=ndatasets) STHROW("Only "<<ndatasets<<" data sets available, requested nr "<<index);
+    int32 sds_id;
+    
+    if ((sds_id=SDselect(hdf_id, index))==FAIL) {
+        STHROW("Can't select data set nr. "<<index);
+    }
+    
+    char sds_name[64]; int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
+
+    if (SDgetinfo(sds_id, sds_name, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
+        STHROW("Error getting information for data set "<<index);
+    }
+	
+	return string(sds_name);
+}
+
+
+SWList HDFpp::readdata(size_t index) { 
     if (index>=ndatasets) STHROW("Only "<<ndatasets<<" data sets available, requested nr "<<index);
     int32 sds_id;
     
@@ -41,26 +59,35 @@ std::vector<double> HDFpp::readdata(size_t index) {
         STHROW("Data set has rank "<<rank<<", expected 1d array.");
 
     size_t nelements = dimsizes[0];  
-    vector<double> ret(nelements);
     int32 start = 0;
 
     switch (data_type) {
         case DFNT_FLOAT64: {
-            if (SDreaddata(sds_id, &start, NULL, dimsizes, &(ret[0])) == FAIL) {
+			if (nelements == 0) {
+				return SWList();
+			}
+
+			vector<double> buf(nelements);
+            if (SDreaddata(sds_id, &start, NULL, dimsizes, &(buf[0])) == FAIL) {
                 STHROW("Error reading 64 bit float values from data set "<<sds_name<<" "<<index);
             }
+
+			return SWList(buf);
+
             break;
         }
 
         case DFNT_INT32: {
-            vector<int32> intermediate(nelements);
-            if (SDreaddata(sds_id, &start, NULL, dimsizes, &(intermediate[0])) == FAIL) {
+			if (nelements == 0) {
+				return SWList();
+			}
+
+            vector<int32> buf(nelements);
+            if (SDreaddata(sds_id, &start, NULL, dimsizes, &(buf[0])) == FAIL) {
                 STHROW("Error reading 32 bit int values from data set "<<sds_name<<" "<<index);
             }
             
-            for (size_t i=0; i<nelements; i++) {
-                ret[i]=static_cast<double>(intermediate[i]);
-            }
+            return SWList(buf);
 
             break;
         }
@@ -69,12 +96,10 @@ std::vector<double> HDFpp::readdata(size_t index) {
             STHROW("Data set "<<sds_name<<" has data type "<<data_type<<" can only read 64bit float and 32bit int");
         }
     }
-
-    return ret;
 }
 
 
-SWObject HDFpp::readattrs(size_t index) { 
+SWDict HDFpp::readattrs(size_t index) { 
     if (index>=ndatasets) STHROW("Only "<<ndatasets<<" data sets available, requested nr "<<index);
     int32 sds_id;
     
@@ -90,7 +115,7 @@ SWObject HDFpp::readattrs(size_t index) {
 
     SWDict result;
 
-    result.insert("Dataset name", sds_name);
+    //result.insert("Dataset name", sds_name);
 
     for (int i=0; i<num_attrs; i++) {
         char attr_name[64]; int32 data_type; int32 count;
@@ -167,16 +192,20 @@ SWObject HDFpp::readattrs(size_t index) {
 
 }
 
-SWObject makedict() {
-	SWDict result;
-	result.insert("This is a key", "This is a value");
-	result.insert("Key 2", 2);
-	result.insert(3, 3.0);
-	SWList ltest;
-	ltest.push_back("String");
-	ltest.push_back(-200);
-	ltest.push_back(2.718281);
-	result.insert("List", ltest);
+
+SWObject HDFpp::dump() {
+	// dump the data sets as one big dictionary
+	SWList result;
+	for (size_t i = 0; i < get_num_datasets(); i++) {
+		SWDict entry; 
+		string name = getname(i);
+		SWDict attrs = readattrs(i);
+		SWList data = readdata(i);
+		entry.insert("name", name);
+		entry.insert("attrs", attrs);
+		entry.insert("data", data);
+		result.push_back(entry);
+	}
 	return result;
 }
 
