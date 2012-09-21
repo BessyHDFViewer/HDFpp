@@ -36,14 +36,5 @@ typedef unsigned long int size_t;
 typedef unsigned int size_t;
 #endif
 
-
-%include "std_vector.i"
-namespace std {
-    %template(dvec) vector<double>;
-    %template(stringvec) vector<string>;
-}
-
-typedef std::vector<double> dvec;
-
 %include SWObject.hpp
 %include hdfpp.hpp
