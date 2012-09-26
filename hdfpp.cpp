@@ -45,13 +45,19 @@ string HDFpp::getname(size_t index) {
     
     sds_release srelease(sds_id);
 
-    char sds_name[64]; int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
+	uint16 nlen;
+	if (SDgetnamelen(sds_id, &nlen)==FAIL) {
+        STHROW("Error getting name length for data set "<<index);
+	}
 
-    if (SDgetinfo(sds_id, sds_name, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
+	vector <char> sds_name(nlen+1);
+    int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
+
+    if (SDgetinfo(sds_id, &(sds_name[0]), &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
         STHROW("Error getting information for data set "<<index);
     }
 	
-	return string(sds_name);
+	return string(&(sds_name[0]), nlen);
 }
 
 
@@ -110,9 +116,9 @@ SWList HDFpp::readdata(size_t index) {
     
     sds_release srelease(sds_id);
 
-    char sds_name[64]; int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
+    int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
 
-    if (SDgetinfo(sds_id, sds_name, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
+    if (SDgetinfo(sds_id, NULL, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
         STHROW("Error getting information for data set "<<index);
     }
 	
@@ -209,9 +215,9 @@ SWDict HDFpp::readattrs(size_t index) {
     
     sds_release srelease(sds_id);
 
-    char sds_name[64]; int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
+    int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
 
-    if (SDgetinfo(sds_id, sds_name, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
+    if (SDgetinfo(sds_id, NULL, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
         STHROW("Error getting information for data set "<<index);
     }
 
@@ -230,16 +236,23 @@ SWObject HDFpp::dump() {
 		}
     
 		sds_release srelease(sds_id);
-
-		char sds_name[64]; int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
-		if (SDgetinfo(sds_id, sds_name, &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
-			STHROW("Error getting information for data set "<<index);
+		
+		uint16 nlen;
+		if (SDgetnamelen(sds_id, &nlen)==FAIL) {
+			STHROW("Error getting name length for data set "<<index);
 		}
 
+		vector <char> sds_name(nlen+1);
+		int32 rank; int32 dimsizes[MAX_VAR_DIMS]; int32 data_type; int32 num_attrs;
+
+		if (SDgetinfo(sds_id, &(sds_name[0]), &rank, dimsizes, &data_type, &num_attrs)==FAIL) {
+			STHROW("Error getting information for data set "<<index);
+		}
+		
 		SWDict entry; 
 		SWDict attrs = readattr_internal(sds_id, num_attrs, index);
 		SWList data = readdata_internal(sds_id, rank, dimsizes, data_type, index);
-		entry.insert("name", sds_name);
+		entry.insert("name", string(&(sds_name[0]), nlen));
 		entry.insert("attrs", attrs);
 		entry.insert("data", data);
 		result.push_back(entry);
