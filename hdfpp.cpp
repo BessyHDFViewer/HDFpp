@@ -84,6 +84,21 @@ static SWList readdata_internal(int32 sds_id, int32 rank, int32 *dimsizes, int32
 
             break;
         }
+		
+		case DFNT_FLOAT32: {
+			if (nelements == 0) {
+				return SWList();
+			}
+
+			vector<float> buf(nelements);
+            if (SDreaddata(sds_id, &start, NULL, dimsizes, &(buf[0])) == FAIL) {
+                STHROW("Error reading 32 bit float values from data set "<<index);
+            }
+
+			return SWList(buf);
+
+            break;
+        }
 
         case DFNT_INT32: {
 			if (nelements == 0) {
@@ -101,7 +116,7 @@ static SWList readdata_internal(int32 sds_id, int32 rank, int32 *dimsizes, int32
         }
 
         default: {
-            STHROW("Data set "<<index<<" has data type "<<data_type<<" can only read 64bit float and 32bit int");
+            STHROW("Data set "<<index<<" has data type "<<data_type<<" can only read 64bit float, 32bit float  and 32bit int");
         }
     }
 }
