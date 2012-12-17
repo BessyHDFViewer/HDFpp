@@ -25,6 +25,7 @@ public:
 	std::string getname(size_t index);
     SWList readdata(size_t index);
     SWDict readattrs(size_t index);
+	SWDict readglobalattrs();
 	SWObject dump();
 };
 

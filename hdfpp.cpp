@@ -224,10 +224,28 @@ SWDict HDFpp::readattrs(size_t index) {
     return readattr_internal(sds_id, num_attrs, index);
 }
 
+SWDict HDFpp::readglobalattrs() {
+	// reading global attributes is implemented
+	// by reading the attributes from the hdf_id
+	return readattr_internal(hdf_id, nglobal_attrs, -1);
+	// -1 is just a fudge value, only for the error messages
+}
+
 
 SWObject HDFpp::dump() {
 	// dump the data sets as one big dictionary
 	SWList result;
+	if (nglobal_attrs != 0) {
+		// if we have global attributes, insert them as a first dataset
+		// with an empty name
+		SWDict entry;
+		SWDict attrs = readglobalattrs();
+		SWList data; // empty list
+		entry.insert("name", string());
+		entry.insert("attrs", attrs);
+		entry.insert("data", data);
+		result.push_back(entry);
+	}
 	for (size_t index = 0; index < get_num_datasets(); index++) {
 		
 		int32 sds_id;
