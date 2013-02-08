@@ -421,8 +421,37 @@ void readlink5_internal(hid_t loc_id, const char *name, const H5L_info_t* info, 
 }
 
 
-void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs) { }
-void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) { }
-void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata) { }
+void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs) {
+	
+}
+
+void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) {
+	SWDict attrs;
+	readattr5_internal(loc_id, name, attrs);
+
+	datasetdata.insert("type", "DATASET");
+	datasetdata.insert("name", name);
+	datasetdata.insert("attrs", attrs);
+
+	// now read the data
+	SWList data;
+	
+	datasetdata.insert("data", data);
+}
+
+void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata) {	
+	SWDict attrs;
+	readattr5_internal(loc_id, name, attrs);
+
+	datatypedata.insert("type", "DATATYPE");
+	datatypedata.insert("name", name);
+	datatypedata.insert("attrs", attrs);
+
+	// now read the data
+	SWList data;
+	datatypedata.insert("data", data);
+ }
+
+
 
 
