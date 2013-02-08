@@ -2,7 +2,7 @@
 
 CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -DHAVE_64BIT -march=core2 $(CFLAGS) -I ~/bin/include/
 
-LDFLAGS=-L ~/bin/lib64/ -lmfhdf -ldf -lz -ljpeg
+LDFLAGS=-L ~/bin/lib64/ -lmfhdf -ldf -lhdf5_hl -lhdf5 -lz -lrt -lm -ljpeg
 
 .c.o:
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<

@@ -11,6 +11,7 @@
 	 throw std::runtime_error(err.str()); }
 
 
+// reading HDF4 files into nested lists/dicts
 class HDFpp {
     int hdf_id;
     size_t ndatasets;
@@ -29,3 +30,13 @@ public:
 	SWObject dump();
 };
 
+#include "hdf5.h"
+// reading HDF5 files into nested lists/dicts
+class H5pp {
+	hid_t file;
+public:
+	H5pp(const char *fname);
+	~H5pp();
+	void close();
+	SWObject dump();
+};
