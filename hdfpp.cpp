@@ -425,6 +425,45 @@ void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs) {
 	
 }
 
+// replicate HDF5 native datatypes for 
+// the use in switch statements
+enum my_dtype {
+	MY_UNKNOWN,
+	MY_NATIVE_CHAR,
+	MY_NATIVE_SHORT,
+	MY_NATIVE_INT,
+	MY_NATIVE_LONG,
+	MY_NATIVE_LLONG,
+	MY_NATIVE_UCHAR,
+	MY_NATIVE_USHORT,
+	MY_NATIVE_UINT,
+	MY_NATIVE_ULONG,
+	MY_NATIVE_ULLONG,
+	MY_NATIVE_FLOAT,
+	MY_NATIVE_DOUBLE,
+	MY_NATIVE_LDOUBLE,
+	MY_NATIVE_C_S1
+};
+
+my_dtype h5t_to_my(hid_t dtype) {
+	// tedious task to ask for type identity
+	if (H5Tequal(dtype, H5T_NATIVE_CHAR)) return MY_NATIVE_CHAR;
+	if (H5Tequal(dtype, H5T_NATIVE_SHORT)) return MY_NATIVE_SHORT;
+	if (H5Tequal(dtype, H5T_NATIVE_INT)) return MY_NATIVE_INT;
+	if (H5Tequal(dtype, H5T_NATIVE_LONG)) return MY_NATIVE_LONG;
+	if (H5Tequal(dtype, H5T_NATIVE_LLONG)) return MY_NATIVE_LLONG;
+	if (H5Tequal(dtype, H5T_NATIVE_UCHAR)) return MY_NATIVE_UCHAR;
+	if (H5Tequal(dtype, H5T_NATIVE_USHORT)) return MY_NATIVE_USHORT;
+	if (H5Tequal(dtype, H5T_NATIVE_UINT)) return MY_NATIVE_UINT;
+	if (H5Tequal(dtype, H5T_NATIVE_ULONG)) return MY_NATIVE_ULONG;
+	if (H5Tequal(dtype, H5T_NATIVE_ULLONG)) return MY_NATIVE_ULLONG;
+	if (H5Tequal(dtype, H5T_NATIVE_FLOAT)) return MY_NATIVE_FLOAT;
+	if (H5Tequal(dtype, H5T_NATIVE_DOUBLE)) return MY_NATIVE_DOUBLE;
+	if (H5Tequal(dtype, H5T_NATIVE_LDOUBLE)) return MY_NATIVE_LDOUBLE;
+	if (H5Tget_class(dtype) == H5T_STRING) return MY_NATIVE_C_S1;
+	return MY_UNKNOWN;
+}
+
 void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) {
 	SWDict attrs;
 	readattr5_internal(loc_id, name, attrs);
@@ -433,10 +472,140 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 	datasetdata.insert("name", name);
 	datasetdata.insert("attrs", attrs);
 
-	// now read the data
+	// open data set
+	hid_t dset = H5Dopen(loc_id, name, H5P_DEFAULT);
+	// get data space & type
+	hid_t dspace = H5Dget_space(dset);
+	hid_t dtype  = H5Dget_type(dset);
+
+	SWList dspace_list;
+	int rank = H5Sget_simple_extent_ndims(dspace);
+	vector<hsize_t> extents(rank);
+	H5Sget_simple_extent_dims(dspace, &extents[0], NULL);
+	dspace_list.push_back(extents);
+	datasetdata.insert("dspace", dspace_list);
+
+    hsize_t nelements = (rank > 0)?1:0;
+	for (size_t ind = 0; ind < rank; ind++) {
+		nelements *= extents[ind];
+	}
+	datasetdata.insert("ndata", nelements);
+
+	hid_t native_dtype = H5Tget_native_type(dtype, H5T_DIR_ASCEND);
+	bool isatomic=false;
+	size_t nmembers=0;
+	switch (H5Tget_class(native_dtype)) {
+		case H5T_INTEGER : { 
+			datasetdata.insert("dspace", "integer");
+			isatomic=true;
+			nmembers = 1;
+			break;
+		}
+		case H5T_FLOAT: {
+			datasetdata.insert("dspace", "float");
+			isatomic=true;
+			nmembers = 1;
+			break;
+		}
+		case H5T_STRING: {
+			datasetdata.insert("dspace", "string");
+			isatomic=true;
+			nmembers = 1;
+			break;
+		}
+		case H5T_COMPOUND: {
+			SWList idlist;
+			// create list of identifiers
+			nmembers = H5Tget_nmembers(native_dtype);
+			for (int idx=0; idx<nmembers; idx++) {
+				char * name = H5Tget_member_name(native_dtype, idx);
+				idlist.push_back(name);
+				free(name);
+			}
+			datasetdata.insert("dspace", idlist);
+			isatomic=false;
+			break;
+		}
+		default: {
+		}
+	}
+
+	// now read the data into memory buffer
+	size_t elsize = H5Tget_size(native_dtype);
+	size_t memsize = elsize*nelements;
 	SWList data;
+	vector<char> bufferspace(memsize);
+	char * buf = &bufferspace[0];
+	H5Dread(dset, native_dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
+
+	// compute offsets and data types as constants
+	vector<ssize_t> eloffsets(nmembers);
+	vector<my_dtype> eltypes(nmembers);
+	if (isatomic) {
+		// only one element
+		eloffsets[0]=0;
+		eltypes[0]=h5t_to_my(native_dtype);
+	} else {
+		// multiple elements
+		for (size_t ind=0; ind<nmembers; ind++) {
+			eloffsets[ind]=H5Tget_member_offset(native_dtype, ind);
+			hid_t mtype = H5Tget_member_type(native_dtype, ind);
+			eltypes[ind] = h5t_to_my(mtype);
+			H5Tclose(mtype);
+		}
+	}
+	// big conversion switch loop - puh
+
+#define DATACONV(MY_TYPE, CTYPE, SWTYPE) \
+		case MY_TYPE: {\
+			data.push_back(static_cast<SWTYPE>(*(reinterpret_cast<CTYPE*>(dbuf))));\
+			break;\
+		}
+
 	
+	for (char * el = buf; el < buf+memsize; el +=elsize) {
+		//iterate over all elements in this dataset
+		for (size_t ind=0; ind<nmembers; ind++) {
+			char * dbuf = el + eloffsets[ind];
+			switch (eltypes[ind]) {
+				// decide about datatype
+			/*	case MY_NATIVE_CHAR: {
+					data.push_back(static_cast<int>(*(reinterpret_cast<char*>(dbuf))));
+					break;
+				} */
+				DATACONV(MY_NATIVE_CHAR, char, int)
+				DATACONV(MY_NATIVE_SHORT,short, int)
+				DATACONV(MY_NATIVE_INT, int, int)
+				DATACONV(MY_NATIVE_LONG,long, long)
+				DATACONV(MY_NATIVE_LLONG,long long, long long)
+				DATACONV(MY_NATIVE_UCHAR,unsigned char, int)
+				DATACONV(MY_NATIVE_USHORT,unsigned short, int)
+				DATACONV(MY_NATIVE_UINT, unsigned int, long)
+				DATACONV(MY_NATIVE_ULONG,unsigned long, long long)
+				DATACONV(MY_NATIVE_ULLONG,unsigned long long, unsigned long long)
+				DATACONV(MY_NATIVE_FLOAT,float, float)
+				DATACONV(MY_NATIVE_DOUBLE,double, double)
+				DATACONV(MY_NATIVE_LDOUBLE,long double, double)
+				case MY_NATIVE_C_S1: {
+					data.push_back(dbuf);
+					break;
+				} 
+
+				default: {
+					data.push_back("???");
+				}
+
+			}
+		}
+	}
 	datasetdata.insert("data", data);
+
+	// close type&space
+	H5Tclose(native_dtype);
+	H5Tclose(dtype);
+	H5Sclose(dspace);
+	// close data set
+	H5Dclose(dset);
 }
 
 void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata) {	

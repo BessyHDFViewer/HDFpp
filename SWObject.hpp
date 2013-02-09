@@ -24,6 +24,7 @@
 #else
 // C++-compiler Tcl
 #include <tcl.h>
+#include <tclTomMath.h>
 #include <string>
 
 // create Tcl_Obj by overloaded functions
@@ -44,7 +45,23 @@ inline Tcl_Obj* MakeBaseSWObj(long i) {
     // create integer object
     return Tcl_NewLongObj(i);
 }
- 
+
+inline Tcl_Obj* MakeBaseSWObj(long long i) {
+    // create integer object
+    return Tcl_NewWideIntObj(i);
+}
+
+inline Tcl_Obj* MakeBaseSWObj(unsigned long long i) {
+    // create integer object
+    return Tcl_NewWideIntObj(i); /** potential overflow **/
+}
+
+inline Tcl_Obj* MakeBaseSWObj(float d) {
+    // create double object.
+    return Tcl_NewDoubleObj(d);
+}
+
+
 inline Tcl_Obj* MakeBaseSWObj(double d) {
     // create double object.
     return Tcl_NewDoubleObj(d);

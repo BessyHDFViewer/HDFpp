@@ -1,4 +1,4 @@
-load ./hdfpp64.so
+load ./hdfpp64[info sharedlibextension]
 
 source hformat.tcl
 
