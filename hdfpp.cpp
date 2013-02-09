@@ -336,7 +336,7 @@ void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
 	readattr5_internal(loc_id, name, attrs);
 	groupdump.insert("attrs", attrs);
 
-	SWList data;
+	SWDict data;
 	H5Literate_by_name (loc_id, name, H5_INDEX_NAME,
                             H5_ITER_NATIVE, NULL, dumpgroup_callback, (void *) &data,
                             H5P_DEFAULT);
@@ -346,14 +346,14 @@ void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
 }
 
 herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *info, void *operator_data) {
-	SWList& groupdata = *((SWList*) operator_data);
+	SWDict& groupdata = *((SWDict*) operator_data);
 
 	if (info->type == H5L_TYPE_SOFT) {
 		// soft link. 
 		SWDict sldata;
 		readlink5_internal(loc_id, name, info, sldata);
 		// Insert soft link data into list
-		groupdata.push_back(sldata);
+		groupdata.insert(name, sldata);
 		return 0; // Success
 	}
 
@@ -375,19 +375,19 @@ herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *inf
 
 			SWDict subgroupdata;
 			readgroup5_recursive(loc_id, name, subgroupdata);
-			groupdata.push_back(subgroupdata);
+			groupdata.insert(name, subgroupdata);
             break;
 		}
         case H5O_TYPE_DATASET: {
             SWDict datasetdata;
 			readdataset5_internal(loc_id, name, datasetdata);
-			groupdata.push_back(datasetdata);
+			groupdata.insert(name, datasetdata);
             break;
 		}
         case H5O_TYPE_NAMED_DATATYPE: {
             SWDict datatypedata;
 			readdatatype5_internal(loc_id, name, datatypedata);
-			groupdata.push_back(datatypedata);
+			groupdata.insert(name, datatypedata);
             break;
 		}
         default: {
@@ -395,7 +395,7 @@ herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *inf
 			SWDict unknown;
 			unknown.insert("type", "UNKNOWN");
 			unknown.insert("name", name);
-			groupdata.push_back(unknown);
+			groupdata.insert(name, unknown);
 		}
     }
 
