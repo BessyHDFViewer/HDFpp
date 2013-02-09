@@ -496,19 +496,19 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 	size_t nmembers=0;
 	switch (H5Tget_class(native_dtype)) {
 		case H5T_INTEGER : { 
-			datasetdata.insert("dspace", "integer");
+			datasetdata.insert("dtype", "integer");
 			isatomic=true;
 			nmembers = 1;
 			break;
 		}
 		case H5T_FLOAT: {
-			datasetdata.insert("dspace", "float");
+			datasetdata.insert("dtype", "float");
 			isatomic=true;
 			nmembers = 1;
 			break;
 		}
 		case H5T_STRING: {
-			datasetdata.insert("dspace", "string");
+			datasetdata.insert("dtype", "string");
 			isatomic=true;
 			nmembers = 1;
 			break;
@@ -522,7 +522,7 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 				idlist.push_back(name);
 				free(name);
 			}
-			datasetdata.insert("dspace", idlist);
+			datasetdata.insert("dtype", idlist);
 			isatomic=false;
 			break;
 		}
