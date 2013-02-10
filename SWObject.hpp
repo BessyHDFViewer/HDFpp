@@ -103,6 +103,13 @@ public:
 		return *this;
 	}
 
+	template <typename T>
+	SWObject& makebasic(const T& what) {
+		if (ptr) Tcl_DecrRefCount(ptr);
+		ptr = MakeBaseSWObj(what);
+		Tcl_IncrRefCount(ptr);
+	}
+
     Tcl_Obj* getObj() const {
         ensure_exists();
 		return ptr;

@@ -405,7 +405,7 @@ herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *inf
 void readlink5_internal(hid_t loc_id, const char *name, const H5L_info_t* info, SWDict& linkdata) { 
 	vector<char> targbuf(info->u.val_size+1);
 
-	if (H5Lget_val(loc_id, name, &targbuf[0], info->u.val_size, H5P_DEFAULT)) {
+	if (H5Lget_val(loc_id, name, &targbuf[0], info->u.val_size, H5P_DEFAULT)<0) {
 		return; //Error
 	}
 	
@@ -420,10 +420,12 @@ void readlink5_internal(hid_t loc_id, const char *name, const H5L_info_t* info, 
 
 }
 
+// which interface to use to read the data
+enum h5_api {
+	h5a_api,
+	h5d_api
+};
 
-void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs) {
-	
-}
 
 // replicate HDF5 native datatypes for 
 // the use in switch statements
@@ -464,12 +466,71 @@ my_dtype h5t_to_my(hid_t dtype) {
 	return MY_UNKNOWN;
 }
 
-void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) {
-	SWDict attrs;
-	readattr5_internal(loc_id, name, attrs);
+static void eval_h5_dspace(hid_t dspace, int& rank, vector<hsize_t>& extents, hsize_t& nelements) {
+	rank = H5Sget_simple_extent_ndims(dspace);
+	vector<hsize_t> ext(rank);
+	H5Sget_simple_extent_dims(dspace, &ext[0], NULL);
+	ext.swap(extents); 
 
+    nelements = (rank > 0)?1:0;
+	for (size_t ind = 0; ind < rank; ind++) {
+		nelements *= extents[ind];
+	}
+}
+
+template <h5_api API>
+SWList eval_h5_dtype(hid_t native_dtype, bool& isatomic, size_t &nmembers, size_t &elsize) {
+	SWList description;
+	isatomic=false;
+	nmembers=0;
+	switch (H5Tget_class(native_dtype)) {
+		case H5T_INTEGER : { 
+			if (API==h5d_api) description.push_back("integer");
+			isatomic=true;
+			nmembers = 1;
+			break;
+		}
+		case H5T_FLOAT: {
+			if (API==h5d_api) description.push_back("float");
+			isatomic=true;
+			nmembers = 1;
+			break;
+		}
+		case H5T_STRING: {
+			if (API==h5d_api) description.push_back("string");
+			isatomic=true;
+			nmembers = 1;
+			break;
+		}
+		case H5T_COMPOUND: {
+			isatomic=false;
+			nmembers = H5Tget_nmembers(native_dtype);
+			if (API==h5d_api) {
+				// create list of identifiers
+				for (int idx=0; idx<nmembers; idx++) {
+					char * name = H5Tget_member_name(native_dtype, idx);
+					description.push_back(name);
+					free(name);
+				}
+			}
+			break;
+		}
+		default: {
+		}
+	}
+
+	// now read the data into memory buffer
+	elsize = H5Tget_size(native_dtype);
+	return description;
+}
+
+
+void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) {
 	datasetdata.insert("type", "DATASET");
 	datasetdata.insert("name", name);
+	
+	SWDict attrs;
+	readattr5_internal(loc_id, name, attrs);
 	datasetdata.insert("attrs", attrs);
 
 	// open data set
@@ -478,60 +539,26 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 	hid_t dspace = H5Dget_space(dset);
 	hid_t dtype  = H5Dget_type(dset);
 
+	
+	int rank;
+	vector<hsize_t> extents;
+    hsize_t nelements;
+	eval_h5_dspace(dspace, rank, extents, nelements);
+
 	SWList dspace_list;
-	int rank = H5Sget_simple_extent_ndims(dspace);
-	vector<hsize_t> extents(rank);
-	H5Sget_simple_extent_dims(dspace, &extents[0], NULL);
 	dspace_list.push_back(extents);
 	datasetdata.insert("dspace", dspace_list);
-
-    hsize_t nelements = (rank > 0)?1:0;
-	for (size_t ind = 0; ind < rank; ind++) {
-		nelements *= extents[ind];
-	}
 	datasetdata.insert("ndata", nelements);
 
 	hid_t native_dtype = H5Tget_native_type(dtype, H5T_DIR_ASCEND);
-	bool isatomic=false;
-	size_t nmembers=0;
-	switch (H5Tget_class(native_dtype)) {
-		case H5T_INTEGER : { 
-			datasetdata.insert("dtype", "integer");
-			isatomic=true;
-			nmembers = 1;
-			break;
-		}
-		case H5T_FLOAT: {
-			datasetdata.insert("dtype", "float");
-			isatomic=true;
-			nmembers = 1;
-			break;
-		}
-		case H5T_STRING: {
-			datasetdata.insert("dtype", "string");
-			isatomic=true;
-			nmembers = 1;
-			break;
-		}
-		case H5T_COMPOUND: {
-			SWList idlist;
-			// create list of identifiers
-			nmembers = H5Tget_nmembers(native_dtype);
-			for (int idx=0; idx<nmembers; idx++) {
-				char * name = H5Tget_member_name(native_dtype, idx);
-				idlist.push_back(name);
-				free(name);
-			}
-			datasetdata.insert("dtype", idlist);
-			isatomic=false;
-			break;
-		}
-		default: {
-		}
-	}
+	bool isatomic;
+	size_t nmembers;
+	size_t elsize;
+
+	SWList dtype_list = eval_h5_dtype<h5d_api>(native_dtype, isatomic, nmembers, elsize);
+	datasetdata.insert("dtype", dtype_list);
 
 	// now read the data into memory buffer
-	size_t elsize = H5Tget_size(native_dtype);
 	size_t memsize = elsize*nelements;
 	SWList data;
 	vector<char> bufferspace(memsize);
@@ -569,10 +596,6 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 			char * dbuf = el + eloffsets[ind];
 			switch (eltypes[ind]) {
 				// decide about datatype
-			/*	case MY_NATIVE_CHAR: {
-					data.push_back(static_cast<int>(*(reinterpret_cast<char*>(dbuf))));
-					break;
-				} */
 				DATACONV(MY_NATIVE_CHAR, char, int)
 				DATACONV(MY_NATIVE_SHORT,short, int)
 				DATACONV(MY_NATIVE_INT, int, int)
@@ -622,5 +645,7 @@ void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata
  }
 
 
-
+void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs) {
+	
+}
 
