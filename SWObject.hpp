@@ -257,10 +257,25 @@ inline PyObject* MakeBaseSWObj(long l) {
     // create integer object
     return PyLong_FromLong(l);
 }
- 
+
+inline PyObject* MakeBaseSWObj(long long l) {
+    // create integer object
+    return PyLong_FromLongLong(l);
+}
+
+inline PyObject* MakeBaseSWObj(unsigned long long l) {
+    // create integer object
+    return PyLong_FromUnsignedLongLong(l);
+}
+
 inline PyObject* MakeBaseSWObj(double d) {
     // create double object.
     return PyFloat_FromDouble(d);
+}
+
+inline PyObject* MakeBaseSWObj(float f) {
+    // create double object.
+    return PyFloat_FromDouble(f);
 }
 
 inline PyObject* MakeBaseSWObj(const std::string &s) {
@@ -296,6 +311,14 @@ public:
 		if (ptr) Py_DECREF(ptr);
 		ptr = obj.ptr;
 		if (ptr) Py_INCREF(ptr);
+		return *this;
+	}
+	
+	template <typename T>
+	SWObject& MakeBasic(const T& what) {
+		if (ptr) Py_DECREF(ptr);
+		ptr = MakeBaseSWObj(what);
+		Py_INCREF(ptr);
 		return *this;
 	}
 
@@ -341,6 +364,11 @@ public:
 		ensure_exists();
 		PyList_Append(ptr, MakeBaseSWObj(what));
     }
+	
+    void push_back(const SWObject& what) {
+		ensure_exists();
+		PyList_Append(ptr, what.getObj());
+    }
 
     PyObject* getObj() const {
         ensure_exists();
@@ -374,6 +402,12 @@ public:
     void insert(const TKey &key, const TValue &value) {
 		ensure_exists();
 		PyDict_SetItem(ptr, MakeBaseSWObj(key), MakeBaseSWObj(value));
+    }
+	
+	template <typename TKey> 
+    void insert(const TKey &key, const SWObject &value) {
+		ensure_exists();
+		PyDict_SetItem(ptr, MakeBaseSWObj(key), value.getObj());
     }
 
     PyObject* getObj() const {

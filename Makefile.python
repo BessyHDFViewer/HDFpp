@@ -2,13 +2,13 @@
 
 CFLAGS:=-DSWIGPYTHON -O3 -g3 -fopenmp -DHAVE_64BIT -march=core2 $(CFLAGS) -I ~/bin/include/ -I /usr/include/python2.7
 
-LDFLAGS=-L ~/bin/lib64/ -lmfhdf -ldf -lz -ljpeg
+LDFLAGS=-L ~/bin/lib64/ -lmfhdf -ldf -lhdf5_hl -lhdf5 -lz -lrt -lm -ljpeg
 
 .c.o:
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
 
 .cpp.o:
-	g++ $(CFLAGS) -fPIC -Wall -pedantic -c -o  $@ $<
+	g++ $(CFLAGS) -fPIC -Wall -c -o  $@ $<
 
 OBJ = hdfpp.o hdfpp_wrap.o
 HDR = hdfpp.hpp
