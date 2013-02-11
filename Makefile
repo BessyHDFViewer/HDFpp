@@ -8,7 +8,7 @@ LDFLAGS=-L ~/bin/lib64/ -lmfhdf -ldf -lhdf5_hl -lhdf5 -lz -lrt -lm -ljpeg
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
 
 .cpp.o:
-	g++ $(CFLAGS) -fPIC -Wall -pedantic -c -o  $@ $<
+	g++ $(CFLAGS) -fPIC -Wall -c -o  $@ $<
 
 OBJ = hdfpp.o hdfpp_wrap.o
 HDR = hdfpp.hpp

@@ -313,7 +313,7 @@ void H5pp::close() {
 }
 
 void readlink5_internal(hid_t loc_id, const char *name, const H5L_info_t* info, SWDict& linkdata);
-void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs);
+void readattr5_internal(hid_t loc_id, SWDict& attrs);
 void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata);
 void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata);
 
@@ -333,7 +333,7 @@ void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
 	groupdump.insert("name", name);
 	
 	SWDict attrs;
-	readattr5_internal(loc_id, name, attrs);
+	readattr5_internal(loc_id, attrs);
 	groupdump.insert("attrs", attrs);
 
 	SWDict data;
@@ -410,7 +410,7 @@ void readlink5_internal(hid_t loc_id, const char *name, const H5L_info_t* info, 
 	}
 	
 	SWDict attrs;
-	readattr5_internal(loc_id, name, attrs);
+	//readattr5_internal(loc_id, attrs);
 
 	linkdata.insert("type", "SOFTLINK");
 	linkdata.insert("name", name);
@@ -538,17 +538,15 @@ SWList eval_h5_dtype(my_typeinfo& typeinfo) {
 }
 
 template <h5_api API>
-static SWObject importdata(hid_t loc_id, const char *name, my_typeinfo typeinfo, my_dspaceinfo dinfo) {
+static SWObject importdata(hid_t resource_id, my_typeinfo typeinfo, my_dspaceinfo dinfo) {
 	size_t memsize = typeinfo.elsize*dinfo.nelements;
 	vector<char> bufferspace(memsize);
 	char * buf = &bufferspace[0];
 	if (API==h5d_api) {
-		H5Dread(loc_id, typeinfo.native_dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
+		H5Dread(resource_id, typeinfo.native_dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf);
 	} else {
 		// h5a_api
-		hid_t handle = H5Aopen(loc_id, name, H5P_DEFAULT);
-		H5Aread(handle, typeinfo.native_dtype, H5P_DEFAULT);
-		H5Aclose(handle);
+		H5Aread(resource_id, typeinfo.native_dtype, buf);
 	}
 
 	// compute offsets and data types as constants
@@ -626,15 +624,15 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 	datasetdata.insert("type", "DATASET");
 	datasetdata.insert("name", name);
 	
-	SWDict attrs;
-	readattr5_internal(loc_id, name, attrs);
-	datasetdata.insert("attrs", attrs);
-
 	// open data set
 	hid_t dset = H5Dopen(loc_id, name, H5P_DEFAULT);
 	// get data space & type
 	hid_t dspace = H5Dget_space(dset);
 	hid_t dtype  = H5Dget_type(dset);
+
+	SWDict attrs;
+	readattr5_internal(dset, attrs);
+	datasetdata.insert("attrs", attrs);
 
 	my_dspaceinfo dinfo;
 	eval_h5_dspace(dspace, dinfo);
@@ -650,7 +648,7 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 	SWList dtype_list = eval_h5_dtype<h5d_api>(tinfo);
 	datasetdata.insert("dtype", dtype_list);
 
-	datasetdata.insert("data", importdata<h5d_api>(dset, name, tinfo, dinfo));
+	datasetdata.insert("data", importdata<h5d_api>(dset, tinfo, dinfo));
 
 	// close type&space
 	H5Tclose(tinfo.native_dtype);
@@ -662,7 +660,7 @@ void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata) 
 
 void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata) {	
 	SWDict attrs;
-	readattr5_internal(loc_id, name, attrs);
+	/* readattr5_internal(loc_id, attrs); */
 
 	datatypedata.insert("type", "DATATYPE");
 	datatypedata.insert("name", name);
@@ -673,8 +671,37 @@ void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata
 	datatypedata.insert("data", data);
  }
 
+herr_t dumpattrib_callback (hid_t loc_id, const char *attr_name, const H5A_info_t *info, void *attrdictptr);
 
-void readattr5_internal(hid_t loc_id, const char *name, SWDict& attrs) {
-	
+
+void readattr5_internal(hid_t resource_id, SWDict& attrs) {
+	// start iteration over attributes and insert into dict
+	H5Aiterate(resource_id, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, dumpattrib_callback, &attrs);
 }
 
+
+herr_t dumpattrib_callback (hid_t loc_id, const char *attr_name, const H5A_info_t *info, void *attrdictptr) {
+	SWDict & attrs = *(reinterpret_cast<SWDict*>(attrdictptr));
+	hid_t attr_id = H5Aopen(loc_id, attr_name, H5P_DEFAULT);
+	hid_t dtype = H5Aget_type(attr_id);
+	hid_t dspace = H5Aget_space(attr_id);
+	
+	my_dspaceinfo dinfo;
+	eval_h5_dspace(dspace, dinfo);
+
+	my_typeinfo tinfo;
+	tinfo.native_dtype = H5Tget_native_type(dtype, H5T_DIR_ASCEND);
+	eval_h5_dtype<h5a_api>(tinfo);
+
+	attrs.insert(attr_name, importdata<h5a_api>(attr_id, tinfo, dinfo));
+
+	// close type&space
+	H5Tclose(tinfo.native_dtype);
+	H5Tclose(dtype);
+	H5Sclose(dspace);
+	// close data set
+	H5Aclose(attr_id);
+
+
+	return 0; //Success, continue
+}
