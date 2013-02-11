@@ -104,10 +104,11 @@ public:
 	}
 
 	template <typename T>
-	SWObject& makebasic(const T& what) {
+	SWObject& MakeBasic(const T& what) {
 		if (ptr) Tcl_DecrRefCount(ptr);
 		ptr = MakeBaseSWObj(what);
 		Tcl_IncrRefCount(ptr);
+		return *this;
 	}
 
     Tcl_Obj* getObj() const {
@@ -153,6 +154,12 @@ public:
 		Tcl_ListObjAppendElement(NULL, ptr, MakeBaseSWObj(what));
     }
 
+    //template <> 
+    void push_back(const SWObject& what) {
+		ensure_exists();
+		Tcl_ListObjAppendElement(NULL, ptr, what.getObj());
+    }
+
     Tcl_Obj* getObj() const {
         ensure_exists();
 		return ptr;
@@ -180,11 +187,17 @@ public:
 			Tcl_IncrRefCount(ptr);
 		}
 	}
-
-    template <typename TKey, typename TValue> 
+    
+	template <typename TKey, typename TValue> 
     void insert(const TKey &key, const TValue &value) {
 		ensure_exists();
 		Tcl_DictObjPut(NULL, ptr, MakeBaseSWObj(key), MakeBaseSWObj(value));
+    }
+
+    template <typename TKey> 
+    void insert(const TKey &key, const SWObject& value) {
+		ensure_exists();
+		Tcl_DictObjPut(NULL, ptr, MakeBaseSWObj(key), value.getObj());
     }
 
     Tcl_Obj* getObj() const {
