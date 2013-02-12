@@ -1,6 +1,7 @@
 #include "mfhdf.h"
 #include "hdf5.h"
 #include "hdfpp.hpp"
+//#include <iostream>
 using namespace std;
 
 HDFpp::HDFpp(const char *fname) : hdf_id(0) {
@@ -496,6 +497,7 @@ SWList eval_h5_dtype(my_typeinfo& typeinfo) {
 	SWList description;
 	typeinfo.isatomic=false;
 	typeinfo.nmembers=0;
+	typeinfo.elsize = H5Tget_size(typeinfo.native_dtype);
 	switch (H5Tget_class(typeinfo.native_dtype)) {
 		case H5T_INTEGER : { 
 			if (API==h5d_api) description.push_back("integer");
@@ -513,6 +515,8 @@ SWList eval_h5_dtype(my_typeinfo& typeinfo) {
 			if (API==h5d_api) description.push_back("string");
 			typeinfo.isatomic=true;
 			typeinfo.nmembers = 1;
+			// for pure strings, the size returned does not include the null terminator
+			typeinfo.elsize++;
 			break;
 		}
 		case H5T_COMPOUND: {
@@ -532,8 +536,7 @@ SWList eval_h5_dtype(my_typeinfo& typeinfo) {
 		}
 	}
 
-	// now read the data into memory buffer
-	typeinfo.elsize = H5Tget_size(typeinfo.native_dtype);
+	
 	return description;
 }
 
@@ -600,6 +603,7 @@ static SWObject importdata(hid_t resource_id, my_typeinfo typeinfo, my_dspaceinf
 				DATACONV(MY_NATIVE_DOUBLE,double, double)
 				DATACONV(MY_NATIVE_LDOUBLE,long double, double)
 				case MY_NATIVE_C_S1: {
+					//cout<<"String: "<<dbuf<<endl;
 					if (API==h5a_api && dinfo.nelements==1)
 						sobject.MakeBasic(dbuf);
 					else 
