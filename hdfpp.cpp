@@ -295,7 +295,7 @@ SWObject HDFpp::dump() {
 	return result;
 }
 
-
+#ifdef HAVE_HDF5
 H5pp::H5pp(const char *fname) : file(-1) {
 	file = H5Fopen (fname, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if (file<0) {
@@ -709,3 +709,4 @@ herr_t dumpattrib_callback (hid_t loc_id, const char *attr_name, const H5A_info_
 
 	return 0; //Success, continue
 }
+#endif

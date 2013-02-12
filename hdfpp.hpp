@@ -30,6 +30,7 @@ public:
 	SWObject dump();
 };
 
+#ifdef HAVE_HDF5
 #include "hdf5.h"
 // reading HDF5 files into nested lists/dicts
 class H5pp {
@@ -40,3 +41,4 @@ public:
 	void close();
 	SWObject dump();
 };
+#endif
