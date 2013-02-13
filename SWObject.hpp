@@ -24,7 +24,7 @@
 #else
 // C++-compiler Tcl
 #include <tcl.h>
-#include <tclTomMath.h>
+//#include <tclTomMath.h>
 #include <string>
 
 // create Tcl_Obj by overloaded functions
