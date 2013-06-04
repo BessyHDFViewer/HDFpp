@@ -2,7 +2,7 @@
 
 CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -march=core2 $(CFLAGS) -I ~/bin/include/
 
-LDFLAGS=-L ~/bin/lib/ -L ~/bin/jpeglib/lib/ -lmfhdf -ldf -lz -lm -ljpeg
+LDFLAGS=-L ~/bin/lib/ -L ~/bin/jpeglib32/lib/ -lmfhdf -ldf -lz -lm -ljpeg
 
 .c.o:
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
