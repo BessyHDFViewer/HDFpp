@@ -1,14 +1,14 @@
 .SUFFIXES: .o .cpp .c
 
-CFLAGS:=-DSWIGPYTHON -O3 -g3 -fopenmp -DHAVE_64BIT -march=core2 $(CFLAGS) -I ~/bin/include/ -I /usr/include/python2.7
+CFLAGS:=-DSWIGPYTHON -O3 -g3 -fopenmp -DHAVE_64BIT -std=c++0x -march=core2 $(CFLAGS) -I /Library/Frameworks/Python.framework/Headers/  -I /Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/numpy/core/include/numpy/ -Dptrdiff_t=ssize_t -I ~/bin/include/
 
-LDFLAGS=-L ~/bin/lib/ -lmfhdf -ldf -lz -ljpeg -lpython2.7
+LDFLAGS=-L ~/bin/lib/ -lmfhdf -ldf -lz -ljpeg -framework Python
 
 .c.o:
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
 
 .cpp.o:
-	g++ $(CFLAGS) -fPIC -Wall -c -o  $@ $<
+	g++-mp-4.6 $(CFLAGS) -fPIC -Wall -c -o  $@ $<
 
 OBJ = hdfpp.o hdfpp_wrap.o
 HDR = hdfpp.hpp
@@ -18,7 +18,7 @@ all: _hdfpp.so
 # Grr: stupid Python wants .so also on MAC OSX instead of .dylib
 
 _hdfpp.so: $(OBJ) 
-	g++ $(CFLAGS) -dynamiclib -fPIC -o $@ $(OBJ) $(LDFLAGS) -lm
+	g++-mp-4.6 $(CFLAGS) -dynamiclib -fPIC -o $@ $(OBJ) $(LDFLAGS) -lm
 
 hdfpp_wrap.cpp: hdfpp.i $(HDR)
 	swig -Wall -python -c++ -DHAVE_64BIT -o hdfpp_wrap.cpp hdfpp.i 
