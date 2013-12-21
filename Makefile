@@ -17,7 +17,7 @@ HDR = hdfpp.hpp
 all: hdfpp64.so
 
 hdfpp64.so: $(OBJ) 
-	g++ $(CFLAGS) -shared -fPIC -Wl,--export-dynamic -o $@ $(OBJ) $(LDFLAGS) -ltclstub8.5 -lm
+	g++ $(CFLAGS) -shared -fPIC -Wl,--export-dynamic -o $@ $(OBJ) $(LDFLAGS) -ltclstub8.5 -lm -static-libgcc
 
 hdfpp_wrap.cpp: hdfpp.i $(HDR)
 	swig -Wall -tcl -c++ -DHAVE_64BIT -DHAVE_HDF5 -o hdfpp_wrap.cpp hdfpp.i 
