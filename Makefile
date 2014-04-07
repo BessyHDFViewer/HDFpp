@@ -1,8 +1,8 @@
 .SUFFIXES: .o .cpp .c
 
-CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -DHAVE_64BIT -DHAVE_HDF5 -march=core2 $(CFLAGS) -I ~/bin/include/
+CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -DHAVE_64BIT -DHAVE_HDF5 -march=core2 $(CFLAGS) -I ~/Programmieren/StaticImglibs/build/include/
 
-LDFLAGS=-L ~/bin/lib64/ -L ~/bin/jpeglib64/lib64 -lmfhdf -ldf -lhdf5_hl -lhdf5 -lrt -lm -lz -ljpeg
+LDFLAGS=-L ~/Programmieren/StaticImglibs/build/lib/ -static-libgcc -static-libstdc++ -lmfhdf -ldf -lhdf5_hl -lhdf5 -lrt -lm -lz -ljpeg
 
 .c.o:
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
