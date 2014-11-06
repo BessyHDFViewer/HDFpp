@@ -333,15 +333,18 @@ void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
 	groupdump.insert("type", "GROUP");
 	groupdump.insert("name", name);
 	
+	// open the group
+	hid_t group_id=H5Gopen(loc_id, name, H5P_DEFAULT);
+
 	SWDict attrs;
-	readattr5_internal(loc_id, attrs);
+	readattr5_internal(group_id, attrs);
 	groupdump.insert("attrs", attrs);
 
 	SWDict data;
-	H5Literate_by_name (loc_id, name, H5_INDEX_NAME,
-                            H5_ITER_NATIVE, NULL, dumpgroup_callback, (void *) &data,
-                            H5P_DEFAULT);
-
+	H5Literate (group_id, H5_INDEX_NAME,
+                            H5_ITER_NATIVE, NULL, dumpgroup_callback, (void *) &data);
+	// close it
+	H5Gclose(group_id);
 	groupdump.insert("data", data);
 
 }
