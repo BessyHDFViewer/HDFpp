@@ -2,7 +2,7 @@
 
 CFLAGS:=-DSWIGPYTHON -O3 -g3 -fopenmp -DHAVE_64BIT -std=c++0x -march=core2 $(CFLAGS) -I /Library/Frameworks/Python.framework/Headers/  -I /Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/numpy/core/include/numpy/ -Dptrdiff_t=ssize_t -I ~/bin/include/
 
-LDFLAGS=-L ~/bin/lib/ -lmfhdf -ldf -lz -ljpeg -framework Python
+LDFLAGS=-L ~/bin/lib/ -lmfhdf -ldf -lz -ljpeg -framework Python -static-libgcc -static-libstdc++
 
 .c.o:
 	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
