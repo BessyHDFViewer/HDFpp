@@ -31,7 +31,6 @@ public:
 };
 
 #ifdef HAVE_HDF5
-#include "hdf5.h"
 // reading HDF5 files into nested lists/dicts
 class H5pp {
 	hid_t file;

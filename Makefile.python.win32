@@ -1,0 +1,36 @@
+.SUFFIXES: .obj .cpp .c .cxx
+
+PPYTHON = M:/Sources/Python276/App
+HDF = M:/Sources/hdf-4.2.11-static/
+CFLAGS =  /DSWIGPYTHON /O2 /Oy /Ob2 /Oi /Zc:auto /arch:SSE2 /MD /I $(PPYTHON)/include /I $(PPYTHON)/Lib/site-packages/numpy/core/include/numpy /I $(HDF)/include
+
+LIBS = python27.lib libmfhdf.lib libhdf.lib libzlib.lib libjpeg.lib libxdr.lib libszip.lib ws2_32.lib
+LDFLAGS= /LIBPATH:$(PPYTHON)/libs /LIBPATH:$(HDF)/lib $(LIBS)
+
+CXXFLAGS = $(CFLAGS) /EHsc # /openmp
+
+.c.obj:
+	cl /c /Zi $(CFLAGS) /Fo$@ $<
+	
+.cpp.obj:
+	cl /c /Zi $(CXXFLAGS) /Fo$@ $<
+	
+.cxx.obj:
+	cl /c /Zi $(CXXFLAGS) /Fo$@ $<
+	
+OBJ = hdfpp.obj hdfpp_wrap.obj
+HDR = hdfpp.hpp
+
+all: _hdfpp.pyd
+
+_hdfpp.pyd: $(OBJ)
+	cl $(CXXFLAGS) /LD  /Zi /Fe$@ $(OBJ) /MD /link $(LDFLAGS) 
+	rem mt -manifest _hdfpp.pyd.manifest -outputresource:_hdfpp.pyd;2
+
+hdfpp_wrap.cpp: hdfpp.i $(HDR)
+	swig -Wall -python -c++ -o hdfpp_wrap.cpp hdfpp.i 
+
+clean: 
+	del $(OBJ) _hdfpp.pyd
+
+

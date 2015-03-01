@@ -1,7 +1,12 @@
-#include "mfhdf.h"
-#include "hdf5.h"
 #include "hdfpp.hpp"
 //#include <iostream>
+
+#include "mfhdf.h"
+
+#ifdef HAVE_HDF5
+#include "hdf5.h"
+#endif
+
 using namespace std;
 
 HDFpp::HDFpp(const char *fname) : hdf_id(0) {
