@@ -32,6 +32,9 @@ public:
 
 #ifdef HAVE_HDF5
 // reading HDF5 files into nested lists/dicts
+#undef VOID
+// Tcl's define VOID clashes with typedef VOID in HDF5
+#include "hdf5.h"
 class H5pp {
 	hid_t file;
 public:
