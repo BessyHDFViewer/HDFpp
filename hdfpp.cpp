@@ -323,18 +323,23 @@ void readattr5_internal(hid_t loc_id, SWDict& attrs);
 void readdataset5_internal(hid_t loc_id, const char *name, SWDict& datasetdata);
 void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata);
 
-void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump);
+void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump, int maxlevel);
 
-SWObject H5pp::dump() {
+SWObject H5pp::dump(int maxlevel) {
 	SWDict result;
 	// read root group of HDF5
-	readgroup5_recursive(file, "/", result);
+	readgroup5_recursive(file, "/", result, maxlevel);
 	return result;
 }
 
 extern "C" herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *info, void *operator_data);
 
-void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
+struct recursedata {
+	SWDict* groupdata;
+	int level;
+};
+
+void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump, int maxlevel) {
 	groupdump.insert("type", "GROUP");
 	groupdump.insert("name", name);
 	
@@ -346,8 +351,15 @@ void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
 	groupdump.insert("attrs", attrs);
 
 	SWDict data;
-	H5Literate (group_id, H5_INDEX_NAME,
-                            H5_ITER_NATIVE, NULL, dumpgroup_callback, (void *) &data);
+	int level = maxlevel - 1;
+
+	if (level != 0) {
+	
+		recursedata rdata { &data, level };
+		H5Literate (group_id, H5_INDEX_NAME, 
+			H5_ITER_NATIVE, NULL, dumpgroup_callback, (void *) &rdata);
+	}
+	
 	// close it
 	H5Gclose(group_id);
 	groupdump.insert("data", data);
@@ -355,14 +367,14 @@ void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump) {
 }
 
 herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *info, void *operator_data) {
-	SWDict& groupdata = *((SWDict*) operator_data);
+	recursedata rdata = *((recursedata *) operator_data);
 
 	if (info->type == H5L_TYPE_SOFT) {
 		// soft link. 
 		SWDict sldata;
 		readlink5_internal(loc_id, name, info, sldata);
 		// Insert soft link data into list
-		groupdata.insert(name, sldata);
+		rdata.groupdata -> insert(name, sldata);
 		return 0; // Success
 	}
 
@@ -383,20 +395,20 @@ herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *inf
             } **/
 
 			SWDict subgroupdata;
-			readgroup5_recursive(loc_id, name, subgroupdata);
-			groupdata.insert(name, subgroupdata);
+			readgroup5_recursive(loc_id, name, subgroupdata, rdata.level);
+			rdata.groupdata -> insert(name, subgroupdata);
             break;
 		}
         case H5O_TYPE_DATASET: {
             SWDict datasetdata;
 			readdataset5_internal(loc_id, name, datasetdata);
-			groupdata.insert(name, datasetdata);
+			rdata.groupdata -> insert(name, datasetdata);
             break;
 		}
         case H5O_TYPE_NAMED_DATATYPE: {
             SWDict datatypedata;
 			readdatatype5_internal(loc_id, name, datatypedata);
-			groupdata.insert(name, datatypedata);
+			rdata.groupdata -> insert(name, datatypedata);
             break;
 		}
         default: {
@@ -404,7 +416,7 @@ herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *inf
 			SWDict unknown;
 			unknown.insert("type", "UNKNOWN");
 			unknown.insert("name", name);
-			groupdata.insert(name, unknown);
+			rdata.groupdata -> insert(name, unknown);
 		}
     }
 

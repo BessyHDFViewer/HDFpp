@@ -41,6 +41,6 @@ public:
 	H5pp(const char *fname);
 	~H5pp();
 	void close();
-	SWObject dump();
+	SWObject dump(int maxlevel = 0);
 };
 #endif
