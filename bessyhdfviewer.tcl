@@ -1,5 +1,6 @@
 load ./hdfpp64[info sharedlibextension]
 
+source hformat.tcl
 proc bessy_reshape {fn} {
 	set hdf [HDFpp %AUTO% $fn]
 	set hlist [$hdf dump]
@@ -26,4 +27,4 @@ proc bessy_reshape {fn} {
 	return $hdict
 }
 
-
+puts [hformat [bessy_reshape fcm_201209_078.hdf]]

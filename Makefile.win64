@@ -1,0 +1,35 @@
+.SUFFIXES: .o .cpp .c
+
+CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -O3 -g3 -DHAVE_64BIT -DHAVE_HDF5 -march=core2 $(CFLAGS) -I ../StaticImglibs/build/include/ -I ../kbskit/buildWindowsNT/include/
+
+LDFLAGS=-L ../StaticImglibs/build/lib/ -L ../kbskit/buildWindowsNT/lib/ -static-libgcc -static-libstdc++ -llibmfhdf -llibhdf -llibxdr -lws2_32 -llibhdf5_hl -llibhdf5 -lm -lz -ljpeg -ltclstub86
+
+.c.o:
+	gcc $(CFLAGS) -fPIC -Wall -c -o $@ $<
+
+.cpp.o:
+	g++ $(CFLAGS) -fPIC -Wall -c -o  $@ $<
+
+OBJ = hdfpp.o hdfpp_wrap.o
+HDR = hdfpp.hpp
+
+
+all: hdfpp64.dll
+
+hdfpp64.dll: $(OBJ) 
+	g++ $(CFLAGS) -shared -fPIC -o $@ $(OBJ) $(LDFLAGS)
+
+hdfpp_wrap.cpp: hdfpp.i $(HDR)
+	swig -Wall -tcl -c++ -DHAVE_64BIT -DHAVE_HDF5 -o hdfpp_wrap.cpp hdfpp.i 
+
+docs:
+	doxygen
+
+tags:
+	ctags -R
+
+test:
+
+
+clean: 
+	rm -rf $(OBJ) hdfpp64.dll hdfpp_wrap.cpp
