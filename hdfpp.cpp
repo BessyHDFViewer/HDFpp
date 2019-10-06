@@ -325,10 +325,10 @@ void readdatatype5_internal(hid_t loc_id, const char *name, SWDict& datatypedata
 
 void readgroup5_recursive(hid_t loc_id, const char *name, SWDict& groupdump, int maxlevel);
 
-SWObject H5pp::dump(int maxlevel) {
+SWObject H5pp::dump(int maxlevel, const char* root) {
 	SWDict result;
 	// read root group of HDF5
-	readgroup5_recursive(file, "/", result, maxlevel);
+	readgroup5_recursive(file, root, result, maxlevel);
 	return result;
 }
 

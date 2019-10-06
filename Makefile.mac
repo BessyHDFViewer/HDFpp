@@ -2,7 +2,7 @@
 
 CFLAGS:= -DUSE_TCL_STUBS -DSWIGTCL -DHAVE_HDF5 -O3 -g3 -DHAVE_64BIT -std=c++11 -march=core2 $(CFLAGS) -I ~/Programmieren/StaticImglibs/build/include/
 
-LDFLAGS=-L ~/Programmieren/StaticImglibs/build/lib/ -L ~/Programmieren/kbskit/buildDarwin/lib/ -lmfhdf -ldf -lhdf5_hl -lhdf5 -lz -ljpeg
+LDFLAGS=-L ~/Programmieren/StaticImglibs/build/lib/ -L ~/Programmieren/kbskit/buildDarwin/lib/ -lmfhdf -lhdf -lhdf5_hl -lhdf5 -lz -ljpeg
 
 .c.o:
 	clang $(CFLAGS) -fPIC -Wall -c -o $@ $<
