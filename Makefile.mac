@@ -11,7 +11,7 @@ LDFLAGS=-L ~/Programmieren/StaticImglibs/build/lib/ -L ~/Programmieren/kbskit/bu
 	clang++ $(CFLAGS) -fPIC -Wall -c -o  $@ $<
 
 OBJ = hdfpp.o hdfpp_wrap.o
-HDR = hdfpp.hpp
+HDR = hdfpp.hpp SWObject.hpp
 
 
 all: hdfpp64.dylib

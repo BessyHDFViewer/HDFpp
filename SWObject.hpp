@@ -16,7 +16,6 @@
 	Tcl_SetObjResult(interp, $1.getObj());
 }   
 
-
 %{
 #include "SWObject.hpp"
 %}
@@ -26,6 +25,37 @@
 #include <tcl.h>
 //#include <tclTomMath.h>
 #include <string>
+
+#include <cstddef>
+enum utf8token { utf8lowbyte = 1, utf8doublet = 2, utf8triplet = 3, utf8quadruplet = 4, utf8highbyte, utf8fail };
+
+static utf8token utf8classify(unsigned char data) {
+    if ((data & 0x80) == 0) { return utf8lowbyte; }
+    if ((data & 0xC0) == 0x80) { return utf8highbyte;}
+    if ((data & 0xE0) == 0xC0) { return utf8doublet; }
+    if ((data & 0xF0) == 0xE0) { return utf8triplet; }
+    if ((data & 0xF8) == 0xF0) { return utf8quadruplet; }
+    return utf8fail;
+}
+
+static bool valid_utf8(const char* data, std::size_t dataSize) {
+    for (std::size_t i = 0; i < dataSize; i++) {
+        int codelength = utf8classify(static_cast<unsigned char>(data[i]));
+        if (codelength == utf8highbyte || codelength == utf8fail)
+            return false;
+        
+        for (int j = 1; j<codelength; j++) {
+            // check for premature end of input           
+            i++;
+            if (i >= dataSize) return false;
+            
+            if (utf8classify(static_cast<unsigned char>(data[i])) != utf8highbyte)
+                return false;
+        }
+    }
+    
+    return true;
+}
 
 // create Tcl_Obj by overloaded functions
 class SWList;
@@ -67,9 +97,15 @@ inline Tcl_Obj* MakeBaseSWObj(double d) {
     return Tcl_NewDoubleObj(d);
 }
 
+
 inline Tcl_Obj* MakeBaseSWObj(const std::string &s) {
     // create string object
-    return Tcl_NewStringObj(s.c_str(), s.size());
+	// first check if it is UTF8 compatible
+	if (valid_utf8(s.c_str(), s.size())) {
+		return Tcl_NewStringObj(s.c_str(), s.size());
+	} else {
+		return Tcl_NewByteArrayObj(reinterpret_cast<const unsigned char*>(s.c_str()), s.size());
+	}
 }
 
 
