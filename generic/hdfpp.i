@@ -24,10 +24,7 @@
  **/
 
 
-%module hdfpp
 %{
-#undef SWIG_version
-#define SWIG_version "0.5"
 #undef SWIG_TCL_STUBS_VERSION
 #define SWIG_TCL_STUBS_VERSION "8.5"
 %}
