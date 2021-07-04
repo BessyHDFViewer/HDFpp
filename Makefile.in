@@ -209,7 +209,7 @@ all: @SWIG_WRAP@ binaries libraries
 wrap: $(SWIGOUTPUT)
 
 $(SWIGOUTPUT): $(SWIGINTERFACE)
-	$(SWIG) -tcl -c++ -pkgversion $(PACKAGE_VERSION) -module $(PACKAGE_NAME) -o $(SWIGOUTPUT) $(SWIGINTERFACE)
+	$(SWIG) -tcl -pkgversion $(PACKAGE_VERSION) -module $(PACKAGE_NAME) -o $(SWIGOUTPUT) $(SWIGINTERFACE)
 
 #========================================================================
 # The binaries target builds executable programs, Windows .dll's, unix

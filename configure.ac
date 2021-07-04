@@ -29,7 +29,7 @@ AC_INIT([hdfpp],[0.5])
 
 TEA_INIT()
 
-TEA_INIT_CXX
+TEA_INIT_CXX([11])
 
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -75,10 +75,18 @@ TEA_SETUP_COMPILER
 
 TEA_ADD_SOURCES([hdfpp.cpp])
 TEA_ADD_SWIGINTERFACE([hdfpp.i])
-TEA_ADD_HEADERS([hdfpp.hpp SWObject.hpp])
+TEA_ADD_HEADERS([])
+# path to static libraries
+AC_ARG_WITH([staticimglibs],
+            [AS_HELP_STRING([--with-staticimglibs=path],
+              [link against StaticImglibs, path should point to directory build])],
+            [TEA_ADD_INCLUDES([-I $withval/include])
+			 TEA_ADD_LIBS([-L $withval/lib])],
+            [])
+          
 TEA_ADD_INCLUDES([])
-TEA_ADD_LIBS([])
-TEA_ADD_CFLAGS([])
+TEA_ADD_LIBS([-lmfhdf -lhdf -lhdf5_hl -lhdf5 -lz -ljpeg])
+TEA_ADD_CFLAGS([-DSWIGTCL -DHAVE_HDF5])
 TEA_ADD_STUB_SOURCES([])
 TEA_ADD_TCL_SOURCES([])
 
