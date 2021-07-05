@@ -167,6 +167,7 @@ PKG_CFLAGS	= @PKG_CFLAGS@
 # compiled with.
 #DEFS		= $(TCL_DEFS) @DEFS@ $(PKG_CFLAGS)
 DEFS		= @DEFS@ $(PKG_CFLAGS)
+SWIGDEFS	= @DEFS@
 
 # Move pkgIndex.tcl to 'BINARIES' var if it is generated in the Makefile
 CONFIG_CLEAN_FILES = Makefile pkgIndex.tcl
@@ -209,7 +210,7 @@ all: @SWIG_WRAP@ binaries libraries
 wrap: $(SWIGOUTPUT)
 
 $(SWIGOUTPUT): $(SWIGINTERFACE)
-	$(SWIG) -tcl -pkgversion $(PACKAGE_VERSION) -module $(PACKAGE_NAME) -o $(SWIGOUTPUT) $(SWIGINTERFACE)
+	$(SWIG) -tcl -pkgversion $(PACKAGE_VERSION) -module $(PACKAGE_NAME) $(SWIGDEFS) -o $(SWIGOUTPUT) $(SWIGINTERFACE)
 
 #========================================================================
 # The binaries target builds executable programs, Windows .dll's, unix

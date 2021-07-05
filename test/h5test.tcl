@@ -1,6 +1,5 @@
-lappend auto_path .
-load ./hdfpp64[info sharedlibextension]
-#package require HDFpp
+lappend auto_path ..
+package require hdfpp
 
 source hformat.tcl
 
