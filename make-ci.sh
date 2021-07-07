@@ -34,4 +34,4 @@ make
 make install
 
 mkdir -p "$distdir"
-tar cvjf "$distdir/hdfpp_$machine.tar.bz2" -C "$builddir/lib" *
+tar cvjf "$distdir/hdfpp_$machine.tar.bz2" -C "$builddir/lib" $(basename "$builddir/lib/"*)
