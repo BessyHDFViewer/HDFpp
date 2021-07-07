@@ -29,6 +29,9 @@ staticimglibdir="$topdir/dependencies/StaticImglibs_$machine"
 
 autoconf
 
-./configure LDFLAGS="-L$tcldir" --with-tcl="$tcldir" --with-staticimglibs="$staticimglibdir" --prefix="$builddir" --libdir="$distdir" --exec-prefix="$kbskitdir"
+./configure LDFLAGS="-L$tcldir" --with-tcl="$tcldir" --with-staticimglibs="$staticimglibdir" --prefix="$builddir" --libdir="$builddir/lib" --exec-prefix="$kbskitdir"
 make
 make install
+
+mkdir -p "$distdir"
+tar cvjf "$distdir/hdfpp_$machine.tar.bz2" -C "$builddir/lib" *
