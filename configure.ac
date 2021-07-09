@@ -81,14 +81,15 @@ AC_ARG_WITH([staticimglibs],
             [AS_HELP_STRING([--with-staticimglibs=path],
               [link against StaticImglibs, path should point to directory build])],
             [TEA_ADD_INCLUDES([-I $withval/include])
-			 TEA_ADD_LIBS([-L $withval/lib])],
+			 LDFLAGS="$LDFLAGS -L $withval/lib"],
             [])
           
 TEA_ADD_INCLUDES([])
-TEA_ADD_LIBS([-lmfhdf -lhdf -lxdr -lhdf5_hl -lhdf5 -lz -ljpeg])
+TEA_ADD_LIBS([-lmfhdf -lhdf -lhdf5_hl -lhdf5 -lz -ljpeg])
 # check for ws2_32 which is needed on Windows
 # abs is a dummy, because ntohl() does not work with AC_CHECK_LIB
 AC_CHECK_LIB([ws2_32], [abs])
+AC_CHECK_LIB([xdr], [xdr_void])
 TEA_ADD_CFLAGS([-DSWIGTCL])
 AC_DEFINE([HAVE_HDF5])
 TEA_ADD_STUB_SOURCES([])
