@@ -85,7 +85,10 @@ AC_ARG_WITH([staticimglibs],
             [])
           
 TEA_ADD_INCLUDES([])
-TEA_ADD_LIBS([-lmfhdf -lhdf -lhdf5_hl -lhdf5 -lz -ljpeg])
+TEA_ADD_LIBS([-lmfhdf -lhdf -lxdr -lhdf5_hl -lhdf5 -lz -ljpeg])
+# check for ws2_32 which is needed on Windows
+# abs is a dummy, because ntohl() does not work with AC_CHECK_LIB
+AC_CHECK_LIB([ws2_32], [abs])
 TEA_ADD_CFLAGS([-DSWIGTCL])
 AC_DEFINE([HAVE_HDF5])
 TEA_ADD_STUB_SOURCES([])
