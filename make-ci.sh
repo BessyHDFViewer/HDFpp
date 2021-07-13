@@ -27,11 +27,15 @@ kbskitdir="$topdir/dependencies/kbskit_$machine"
 tcldir="$kbskitdir/lib"
 staticimglibdir="$topdir/dependencies/StaticImglibs_$machine"
 
+rm -rf "$builddir"
+
 autoconf
 
 ./configure LDFLAGS="-L$tcldir" --with-tcl="$tcldir" --with-staticimglibs="$staticimglibdir" --prefix="$builddir" --libdir="$builddir/lib" --exec-prefix="$kbskitdir"
 make
 make install
 
+cp -r "$staticimglibdir/licenses" "$builddir/lib/3rdparty"
+
 mkdir -p "$distdir"
-tar cvjf "$distdir/hdfpp_$machine.tar.bz2" -C "$builddir/lib" $(basename "$builddir/lib/"*)
+tar cvjf "$distdir/hdfpp_$machine.tar.bz2" -C "$builddir/lib" $(basename -a "$builddir/lib/"*)
