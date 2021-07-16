@@ -25,6 +25,12 @@ jobs:
               with:
                 flavor: full
 
+            - name: Set CFLAGS for macOS compatibility
+              if: ${{ matrix.os == 'macos-latest' }}
+              run: |
+                echo "CFLAGS=-mmacosx-version-min=10.13" >> $GITHUB_ENV
+                echo "MACOSX_DEPLOYMENT_TARGET=10.13" >> $GITHUB_ENV
+
             - name: build library
               run: ./make-ci.sh
 
