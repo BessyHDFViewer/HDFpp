@@ -4227,6 +4227,10 @@ AC_DEFUN([TEA_SETUP_COMPILER], [
         # 2. Try to link the C++ libraries statically
 	AX_ADDTO_LINK_FLAGS([-static-libgcc])
 	AX_ADDTO_LINK_FLAGS([-static-libstdc++])
+	# on Windows, add -static to the linkage (for some MinGW libraries)
+	if test "${TEA_PLATFORM}" = "windows"; then
+	    AX_ADDTO_LINK_FLAGS([-static])
+	fi
 	AC_LANG_POP([C++])
     fi
     #--------------------------------------------------------------------
