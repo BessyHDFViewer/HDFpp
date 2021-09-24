@@ -160,6 +160,9 @@ public:
 	}
 
 	SWObject& operator = (const SWObject& obj) {
+		// guard against self assignment
+		if (ptr == obj.ptr) return *this;
+
 		if (ptr) Tcl_DecrRefCount(ptr);
 		ptr = obj.ptr;
 		if (ptr) Tcl_IncrRefCount(ptr);
@@ -371,6 +374,9 @@ public:
 	}
 
 	SWObject& operator = (const SWObject& obj) {
+		// guard against self assignment
+		if (ptr == obj.ptr) return *this;
+
 		if (ptr) Py_DECREF(ptr);
 		ptr = obj.ptr;
 		if (ptr) Py_INCREF(ptr);
