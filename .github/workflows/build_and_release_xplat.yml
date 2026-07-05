@@ -24,9 +24,14 @@ jobs:
               uses: git-for-windows/setup-git-for-windows-sdk@v1
               with:
                   flavor: full
+            
+            - name: Install SWIG
+              if: runner.os == 'macOS'
+              run: |
+                   brew install swig
 
             - name: build libraries
-              run: ./make.sh
+              run: ./make-ci.sh
 
             - name: upload result
               uses: actions/upload-artifact@v4
