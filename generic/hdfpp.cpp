@@ -327,10 +327,24 @@ SWObject HDFpp::dump() {
 
 #ifdef HAVE_HDF5
 H5pp::H5pp(const char *fname) : file(-1) {
-	file = H5Fopen (fname, H5F_ACC_RDONLY, H5P_DEFAULT);
-	if (file<0) {
+	// 1. Create a File Access Property List (FAPL)
+	hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+	if (fapl >= 0) {
+		// 2. Disable file locking (use_file_locking = false, ignore_disabled_locks = true)
+		H5Pset_file_locking(fapl, false, true);
+	}
+
+	// 3. Open the file passing our custom property list instead of H5P_DEFAULT
+	file = H5Fopen(fname, H5F_ACC_RDONLY, fapl);
+
+	// 4. Close the property list handle to prevent resource leaks
+	if (fapl >= 0) {
+		H5Pclose(fapl);
+	}
+
+	if (file < 0) {
 		// can't read the file
-		STHROW("Can't open "<<fname);
+		STHROW("Can't open " << fname);
 	}
 }
 
@@ -338,8 +352,9 @@ H5pp::~H5pp () { close(); }
 
 
 void H5pp::close() {
-	if (file>=0) {
+	if (file >= 0) {
 		H5Fclose(file);
+		file = -1; // Reset to avoid dangling descriptor states
 	}
 }
 
@@ -405,7 +420,7 @@ herr_t dumpgroup_callback (hid_t loc_id, const char *name, const H5L_info_t *inf
 
 	// other types: get object info
 	H5O_info_t      infobuf;
-	herr_t status = H5Oget_info_by_name (loc_id, name, &infobuf, H5P_DEFAULT);
+	herr_t status = H5Oget_info_by_name (loc_id, name, &infobuf, H5O_INFO_ALL, H5P_DEFAULT);
     
 	if (status<0) {
 		// pass error on

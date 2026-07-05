@@ -103,6 +103,11 @@ inline Tcl_Obj* MakeBaseSWObj(long i) {
     return Tcl_NewLongObj(i);
 }
 
+inline Tcl_Obj* MakeBaseSWObj(long unsigned i) {
+    // create integer object
+    return Tcl_NewWideIntObj(i);
+}
+
 inline Tcl_Obj* MakeBaseSWObj(long long i) {
     // create integer object
     return Tcl_NewWideIntObj(i);
@@ -322,6 +327,11 @@ inline PyObject* MakeBaseSWObj(int i) {
 inline PyObject* MakeBaseSWObj(long l) {
     // create integer object
     return PyLong_FromLong(l);
+}
+
+inline PyObject* MakeBaseSWObj(long unsigned l) {
+    // create integer object
+    return PyLong_FromUnsignedLong(l);
 }
 
 inline PyObject* MakeBaseSWObj(long long l) {
